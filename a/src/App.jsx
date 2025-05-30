@@ -28,6 +28,10 @@ function App() {
   const [food, setFood] = useState(getRandomFood(INITIAL_SNAKE));
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
+  const [leaderboard, setLeaderboard] = useState(() => {
+    const saved = localStorage.getItem('snake_leaderboard');
+    return saved ? JSON.parse(saved) : [];
+  });
   const moveRef = useRef(direction);
 
   useEffect(() => {
@@ -50,19 +54,33 @@ function App() {
   }, [gameOver]);
 
   useEffect(() => {
+    if (gameOver && score > 0) {
+      setLeaderboard(lb => {
+        const newLb = [...lb, { score, time: Date.now() }]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+        return newLb;
+      });
+    }
+  }, [gameOver]);
+
+  useEffect(() => {
+    localStorage.setItem('snake_leaderboard', JSON.stringify(leaderboard));
+  }, [leaderboard]);
+
+  useEffect(() => {
     if (gameOver) return;
     const interval = setInterval(() => {
       setSnake(prev => {
-        const newHead = {
+        let newHead = {
           x: prev[0].x + moveRef.current.x,
           y: prev[0].y + moveRef.current.y
         };
-        // 撞墙或撞自己
-        if (
-          newHead.x < 0 || newHead.x >= BOARD_SIZE ||
-          newHead.y < 0 || newHead.y >= BOARD_SIZE ||
-          prev.some(seg => seg.x === newHead.x && seg.y === newHead.y)
-        ) {
+        // 边缘穿越
+        newHead.x = (newHead.x + BOARD_SIZE) % BOARD_SIZE;
+        newHead.y = (newHead.y + BOARD_SIZE) % BOARD_SIZE;
+        // 撞自己
+        if (prev.some(seg => seg.x === newHead.x && seg.y === newHead.y)) {
           setGameOver(true);
           return prev;
         }
@@ -116,6 +134,17 @@ function App() {
         </div>
       )}
       <div className="tip">使用方向键控制移动</div>
+      <div className="leaderboard">
+        <h2>积分榜</h2>
+        <ol>
+          {leaderboard.length === 0 && <li>暂无记录</li>}
+          {leaderboard.map((item, idx) => (
+            <li key={item.time}>
+              {idx + 1}. 分数: {item.score} {new Date(item.time).toLocaleString()}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
