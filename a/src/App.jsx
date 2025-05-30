@@ -42,6 +42,16 @@ function App() {
     if (gameOver) return;
     const handleKeyDown = (e) => {
       switch (e.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          e.preventDefault(); // 阻止页面滚动
+          break;
+        default:
+          break;
+      }
+      switch (e.key) {
         case 'ArrowUp': if (moveRef.current.y !== 1) setDirection({ x: 0, y: -1 }); break;
         case 'ArrowDown': if (moveRef.current.y !== -1) setDirection({ x: 0, y: 1 }); break;
         case 'ArrowLeft': if (moveRef.current.x !== 1) setDirection({ x: -1, y: 0 }); break;
@@ -49,7 +59,7 @@ function App() {
         default: break;
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameOver]);
 
@@ -131,20 +141,34 @@ function App() {
         <div className="game-over">
           <div>游戏结束！最终得分：{score}</div>
           <button onClick={handleRestart}>重新开始</button>
+          <div className="leaderboard gameover-leaderboard">
+            <h2>积分榜</h2>
+            <ol>
+              {leaderboard.length === 0 && <li>暂无记录</li>}
+              {leaderboard.map((item, idx) => (
+                <li key={item.time}>
+                  {idx + 1}. 分数: {item.score} {new Date(item.time).toLocaleString()}
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       )}
       <div className="tip">使用方向键控制移动</div>
-      <div className="leaderboard">
-        <h2>积分榜</h2>
-        <ol>
-          {leaderboard.length === 0 && <li>暂无记录</li>}
-          {leaderboard.map((item, idx) => (
-            <li key={item.time}>
-              {idx + 1}. 分数: {item.score} {new Date(item.time).toLocaleString()}
-            </li>
-          ))}
-        </ol>
-      </div>
+      {/* 游戏未结束时显示一个简化版积分榜 */}
+      {!gameOver && (
+        <div className="leaderboard ingame-leaderboard">
+          <h2>积分榜</h2>
+          <ol>
+            {leaderboard.length === 0 && <li>暂无记录</li>}
+            {leaderboard.map((item, idx) => (
+              <li key={item.time}>
+                {idx + 1}. 分数: {item.score} {new Date(item.time).toLocaleString()}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   );
 }
